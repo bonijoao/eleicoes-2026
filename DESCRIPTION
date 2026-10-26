@@ -1,0 +1,12 @@
+Package: auditoriaurna
+Title: Auditoria aberta dos logs das urnas, 2026
+Version: 0.0.1
+Authors@R: person("João Paulo", "Bonifácio", role = c("aut", "cre"),
+    email = "jpab.27@hotmail.com")
+Description: Coleta, leitura e validação dos logs e boletins de urna publicados
+    pelo TSE para o 2º turno das eleições de 2026.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports: data.table, stringi, curl, jsonlite, archive, arrow, cli, fs
+Suggests: testthat (>= 3.0.0), webfakes
+Config/testthat/edition: 3

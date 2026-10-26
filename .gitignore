@@ -1,0 +1,9 @@
+dados/
+renv/library/
+renv/staging/
+renv/local/
+.Rhistory
+.RData
+*.part
+resultados/*.parquet
+.superpowers/
