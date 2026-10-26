@@ -21,6 +21,9 @@ raiz    <- "dados/brutos"
 secoes <- as.data.table(arrow::read_parquet(sprintf("dados/indice/secoes_%s.parquet", pleito)))
 if (ufs != "todas") secoes <- secoes[uf %in% strsplit(ufs, ",")[[1]]]
 if (!is.null(amostra)) { set.seed(2026); secoes <- secoes[sort(sample(.N, as.integer(amostra)))] }
+# Seção agregada não tem urna nem arquivos: entra no status sem requisição.
+agregadas <- secoes[!is.na(secao_principal)]
+secoes <- secoes[is.na(secao_principal)]
 
 status <- list()
 blocos <- split(seq_len(nrow(secoes)), ceiling(seq_len(nrow(secoes)) / lote))
@@ -56,7 +59,7 @@ for (b in seq_along(blocos)) {
     b, length(blocos), feitos, dt, dt / feitos * (nrow(secoes) - feitos)))
 }
 
-status <- rbindlist(status)
+status <- rbindlist(c(status, list(agregadas[, `:=`(aux_http = NA_integer_, n_hashes = NA_integer_, hash_st = NA_character_, log_ok = FALSE, bu_ok = FALSE)])), use.names = TRUE)
 arrow::write_parquet(status, sprintf("dados/indice/status_%s%s.parquet", pleito,
                                      if (is.null(amostra)) "" else "_amostra"))
 print(status[, .(secoes = .N, aux_404 = sum(aux_http == 404L, na.rm = TRUE),
