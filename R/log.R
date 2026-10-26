@@ -49,13 +49,30 @@ votos_log <- function(eventos, turno) {
     ts_fim       = ts_local[msg == "O voto do eleitor foi computado"][1],
     manual       = any(startsWith(msg, "Solicitação de dado pessoal do eleitor para habilitação manual")),
     digital      = any(!is.na(tent)),
-    n_tentativas = if (any(!is.na(tent))) max(tent, na.rm = TRUE) else 0L
+    n_tentativas = if (any(!is.na(tent))) max(tent, na.rm = TRUE) else 0L,
+    habilitado   = any(msg == "Eleitor foi habilitado")
   ), by = .(id_urna, voto)]
-  incompletos <- sum(is.na(v$ts_fim))
+  # Sem "computado": tentativas_sem_voto conta todo identificador digitado que
+  # não virou voto (título errado, eleitor não encontrado...); habilitados_sem_voto
+  # só os casos em que a urna chegou a habilitar o eleitor.
+  sem_voto <- is.na(v$ts_fim)
+  tentativas <- sum(sem_voto)
+  habilitados <- sum(sem_voto & v$habilitado)
   v <- v[!is.na(ts_fim)]
   v[, tipo_hab := data.table::fifelse(manual, "manual",
                     data.table::fifelse(digital, "biometria", "sem_biometria"))]
   v <- v[, .(id_urna, ts_ini, ts_fim, tipo_hab, n_tentativas)]
-  data.table::setattr(v, "incompletos", incompletos)
+  data.table::setattr(v, "tentativas_sem_voto", tentativas)
+  data.table::setattr(v, "habilitados_sem_voto", habilitados)
   v[]
+}
+
+# Encerramento do turno: o primeiro "Inicio do Encerramento" da urna que
+# registrou o último voto (a urna substituída também pode ter encerrado).
+encerramento_turno <- function(eventos, votos, turno = 2L) {
+  if (is.null(votos) || nrow(votos) == 0L) return(as.POSIXct(NA, tz = "UTC"))
+  t_alvo <- turno
+  urna <- votos$id_urna[which.max(votos$ts_fim)]
+  enc <- eventos[turno %in% t_alvo & id_urna == urna & startsWith(msg, "Inicio do Encerramento"), ts_local]
+  if (length(enc)) enc[1] else as.POSIXct(NA, tz = "UTC")
 }

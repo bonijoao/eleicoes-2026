@@ -33,7 +33,11 @@ for (b in seq_along(blocos)) {
   aux_dest <- s[, caminho_cache(raiz, pleito, uf, mun, zona, secao, "aux")]
   r_aux <- baixar_lote(s[, url_aux(pleito, uf, mun, zona, secao)], aux_dest, taxa = taxa)
 
-  info <- lapply(aux_dest, ler_aux)
+  # aux.json com corpo inválido (página de erro do CDN com HTTP 200) é apagado
+  # do cache para ser baixado de novo na próxima execução.
+  info <- lapply(aux_dest, function(p) tryCatch(ler_aux(p), error = function(e) {
+    unlink(p); list(n_hashes = NA_integer_, hash_st = "aux_invalido")
+  }))
   s[, `:=`(aux_http = data.table::fifelse(file.exists(aux_dest), 200L, r_aux$http),
            n_hashes = vapply(info, `[[`, 1L, "n_hashes"),
            hash_st  = vapply(info, `[[`, "", "hash_st"))]

@@ -7,6 +7,6 @@ Description: Coleta, leitura e validação dos logs e boletins de urna publicado
     pelo TSE para o 2º turno das eleições de 2026.
 License: MIT + file LICENSE
 Encoding: UTF-8
-Imports: data.table, stringi, curl, jsonlite, archive, arrow, cli, fs
-Suggests: testthat (>= 3.0.0), webfakes
+Imports: data.table, stringi, curl, jsonlite, archive, arrow, cli
+Suggests: testthat (>= 3.0.0), webfakes, withr
 Config/testthat/edition: 3

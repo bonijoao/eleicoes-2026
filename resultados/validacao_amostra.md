@@ -1,6 +1,6 @@
 # Validação log × boletim de urna (amostra de validação)
 
-Gerado em 2026-10-26 12:05 (horário de Brasília). Seções: 2000.
+Gerado em 2026-10-26 13:12 (horário de Brasília). Seções: 2000.
 
 Para cada seção, os votos reconstruídos do log da urna são comparados com o
 boletim de urna (BU) assinado: total de comparecimento e forma de habilitação
@@ -52,4 +52,19 @@ Votos conferidos nas seções que batem: 495.035 (log) = 495.035 (BU).
 ## Seções não explicadas
 
 Nenhuma.
+
+## Marcas nas seções analisadas (ok e urna substituída)
+
+| hash não totalizado | fuso suspeito no município | abertura destoa do município | habilitados sem voto |
+| --- | --- | --- | --- |
+| 66 | 1126 | 0 | 34 |
+
+## 1º turno: log × BU consolidado do TSE
+
+O 1º turno está no mesmo log da urna e serve de controle nas duas investigações.
+
+| categoria_1t | N |
+| --- | --- |
+| ok | 1923 |
+| urna_diferente_no_1t |    5 |
 

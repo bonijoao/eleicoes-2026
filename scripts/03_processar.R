@@ -4,8 +4,8 @@
 # Saída (em dados/processados[/amostra]/):
 #   secoes.parquet                      uma linha por seção, com offset de fuso
 #   votos/uf=<uf>/parte-<k>.parquet     uma linha por voto (horário local da urna)
-# O horário de Brasília dos votos sai da junção com secoes.offset_h (ver
-# R/consulta.R), para não regravar centenas de milhões de linhas.
+# Os votos ficam no horário local da urna; o de Brasília sai da junção com
+# secoes.offset_h, para não regravar centenas de milhões de linhas.
 
 pkgload::load_all(quiet = TRUE)
 library(data.table)
@@ -30,7 +30,8 @@ dir.create(file.path(saida, "votos"), recursive = TRUE, showWarnings = FALSE)
 
 # Blocos de até 200 seções da mesma UF; cada worker grava os votos do seu bloco.
 status[, bloco := paste(uf, (seq_len(.N) - 1L) %/% 200L, sep = "-"), by = uf]
-blocos <- split(status[, .(uf, mun, zona, secao, log_path, bu_path, agregada = !is.na(secao_principal))], status$bloco)
+blocos <- split(status[, .(uf, mun, zona, secao, log_path, bu_path, agregada = !is.na(secao_principal),
+                            aux_http, hash_st)], status$bloco)
 
 mirai::daemons(workers)
 mirai::everywhere(pkgload::load_all(raiz_pacote, quiet = TRUE), raiz_pacote = getwd())
@@ -38,8 +39,9 @@ t0 <- Sys.time()
 tarefas <- lapply(seq_along(blocos), function(k) list(k = k, b = blocos[[k]]))
 res <- mirai::mirai_map(tarefas, function(t, saida) {
   k <- t$k; b <- t$b
-  r <- lapply(seq_len(nrow(b)), function(i) processar_secao(b$log_path[i], b$bu_path[i], b$agregada[i]))
-  sec <- data.table::rbindlist(lapply(r, `[[`, "secao"))
+  r <- lapply(seq_len(nrow(b)), function(i) processar_seguro(b$log_path[i], b$bu_path[i], agregada = b$agregada[i],
+                                                              aux_http = b$aux_http[i], hash_st = b$hash_st[i]))
+  sec <- data.table::rbindlist(lapply(r, `[[`, "secao"), fill = TRUE)
   sec <- cbind(b[, .(uf, mun, zona, secao)], sec)
   vot <- data.table::rbindlist(lapply(seq_along(r), function(i) {
     v <- r[[i]]$votos
@@ -56,13 +58,14 @@ mirai::daemons(0)
 
 erros <- Filter(mirai::is_error_value, res)
 if (length(erros)) { print(erros[[1]]); stop(length(erros), " blocos com erro") }
-secoes <- rbindlist(res)
+secoes <- rbindlist(res, fill = TRUE)
 off <- offset_municipio(secoes[!is.na(abertura_local), .(uf, mun, abertura_local)])
-secoes <- merge(secoes, off[, .(uf, mun, offset_h, confianca_offset = confianca)],
+secoes <- merge(secoes, off[, .(uf, mun, offset_h, confianca_offset = confianca, fuso_suspeito = suspeito)],
                 by = c("uf", "mun"), all.x = TRUE)
 for (col in c("abertura", "encerramento", "encerramento_log", "ultimo_voto")) {
   secoes[, (paste0(col, "_bsb")) := para_brasilia(get(paste0(col, "_local")), offset_h)]
 }
+secoes[, abertura_destoa := abertura_destoa(abertura_local, offset_h)]
 arrow::write_parquet(secoes, file.path(saida, "secoes.parquet"))
 
 cli::cli_alert_success(sprintf("%d seções em %.1f min", nrow(secoes),

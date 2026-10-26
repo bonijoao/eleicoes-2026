@@ -34,7 +34,7 @@ test_that("sequência sem voto computado não vira voto", {
     "25/10/2026 09:03:00\tINFO\t1\tVOTA\tO voto do eleitor foi computado\tX")
   v <- votos_log(eventos_log(l), turno = 2L)
   expect_equal(nrow(v), 1L)
-  expect_equal(attr(v, "incompletos"), 1L)
+  expect_equal(attr(v, "tentativas_sem_voto"), 1L)
 })
 
 test_that("urna ligada na véspera e não reiniciada conta os votos do dia do turno", {

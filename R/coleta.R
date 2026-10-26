@@ -5,8 +5,10 @@
 #
 # Educação com o servidor: no máximo `taxa` requisições por segundo. Falha de
 # rede ou HTTP 5xx espera `esperas[k]` e tenta de novo; HTTP 429 (o CDN do TSE
-# bloqueia o IP por alguns minutos) pausa tudo por pausa_429 * 2^(k-1) segundos,
-# até max_429 vezes. 404 não se repete.
+# bloqueia o IP por alguns minutos) pausa tudo por pausa_429 * 2^(k-1) segundos;
+# k volta a zero a cada bloco concluído sem 429, e só depois de max_429 bloqueios
+# seguidos a função desiste, com um aviso dizendo quantos arquivos ficaram
+# pendentes. 404 não se repete.
 
 UA_PADRAO <- "eleicoes-2026-auditoria (github.com/bonijoao/eleicoes-2026)"
 
@@ -31,6 +33,7 @@ baixar_lote <- function(urls, destinos, conc = 16L, ua = UA_PADRAO, taxa = Inf,
           handle = curl::new_handle(useragent = ua, timeout = 120),
           done = function(r) {
             res$http[j] <<- r$status_code
+            res$erro[j] <<- NA_character_
             if (r$status_code == 200L) {
               part <- paste0(destinos[j], ".part")
               writeBin(r$content, part)
@@ -50,6 +53,7 @@ baixar_lote <- function(urls, destinos, conc = 16L, ua = UA_PADRAO, taxa = Inf,
       })
       curl::multi_run(pool = pool)
       if (length(bloqueado) > 0L) break
+      n429 <- 0L
       if (is.finite(taxa)) {
         resta <- length(bloco) / taxa - as.numeric(difftime(Sys.time(), t0, units = "secs"))
         if (resta > 0) Sys.sleep(resta)
@@ -57,7 +61,13 @@ baixar_lote <- function(urls, destinos, conc = 16L, ua = UA_PADRAO, taxa = Inf,
     }
     if (length(bloqueado) > 0L) {
       n429 <- n429 + 1L
-      if (n429 > max_429) break
+      if (n429 > max_429) {
+        faltam <- sum(!(file.exists(destinos) & file.size(destinos) > 0) &
+                        (is.na(res$http) | res$http %in% 429L | res$http >= 500L))
+        warning(sprintf("%d arquivos pendentes após %d bloqueios HTTP 429 seguidos", faltam, max_429),
+                call. = FALSE)
+        break
+      }
       espera <- pausa_429 * 2^(n429 - 1L)
       cli::cli_alert_warning("HTTP 429: pausa de {round(espera)} s ({n429}/{max_429})")
       Sys.sleep(espera)

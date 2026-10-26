@@ -10,6 +10,21 @@
 TIPO_VOTO <- c("1" = "nominal", "2" = "branco", "3" = "nulo", "4" = "legenda",
                "5" = "cargo_sem_candidato")
 CARGO_PRESIDENTE <- 1L
+TIPO_URNA <- c("1" = "secao", "3" = "contingencia", "4" = "reservaSecao", "6" = "reservaEncerrandoSecao")
+TIPO_ARQUIVO <- c("1" = "votacaoUE", "2" = "votacaoRED", "3" = "saMistaMRParcialCedula",
+                  "4" = "saMistaBUImpressoCedula", "5" = "saManual", "6" = "saEletronica")
+
+# dadosSecaoSA é uma CHOICE: [0] DadosSecao (urna de seção, com primeiro e
+# último voto) ou [1] DadosSA (Sistema de Apuração, sem horários).
+ler_dados_secao <- function(no) {
+  if (no$classe == 2L && no$tag == 0L) {
+    list(tipo_bu = "secao",
+         abertura = data_hora_je(der_str(no$valor[[1]]$valor)),
+         encerramento = data_hora_je(der_str(no$valor[[2]]$valor)))
+  } else {
+    list(tipo_bu = "sa", abertura = as.POSIXct(NA, tz = "UTC"), encerramento = as.POSIXct(NA, tz = "UTC"))
+  }
+}
 
 ler_bu <- function(path) {
   env <- der_parse(readBin(path, "raw", file.size(path)))[[1]]$valor
@@ -17,7 +32,8 @@ ler_bu <- function(path) {
   stopifnot(conteudo$classe == 0L, conteudo$tag == 4L)
   bu <- der_parse(conteudo$valor)[[1]]$valor
 
-  secao <- bu[[6]]$valor
+  secao <- ler_dados_secao(bu[[6]])
+  urna <- bu[[3]]$valor
   det <- Filter(function(n) n$classe == 2L && n$tag == 1L, bu[8])
   hab <- if (length(det)) {
     q <- vapply(det[[1]]$valor, function(n) der_int(n$valor), 1L)
@@ -41,8 +57,11 @@ ler_bu <- function(path) {
   }
 
   list(
-    abertura_local     = data_hora_je(der_str(secao[[1]]$valor)),
-    encerramento_local = data_hora_je(der_str(secao[[2]]$valor)),
+    tipo_bu            = secao$tipo_bu,
+    tipo_urna          = unname(TIPO_URNA[as.character(der_int(urna[[1]]$valor))]),
+    tipo_arquivo       = unname(TIPO_ARQUIVO[as.character(der_int(urna[[4]]$valor))]),
+    abertura_local     = secao$abertura,
+    encerramento_local = secao$encerramento,
     emissao_local      = data_hora_je(der_str(bu[[5]]$valor)),
     comparecimento     = der_int(bu[[7]]$valor),
     hab                = hab,
