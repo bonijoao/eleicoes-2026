@@ -1,1 +1,2 @@
 # Gerado à mão: exports explícitos
+export(url_indice, url_aux, url_arquivo, caminho_cache)
