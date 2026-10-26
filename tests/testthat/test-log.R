@@ -37,6 +37,26 @@ test_that("sequência sem voto computado não vira voto", {
   expect_equal(attr(v, "incompletos"), 1L)
 })
 
+test_that("urna ligada na véspera e não reiniciada conta os votos do dia do turno", {
+  # caso real: pr 74810/0009/0091, ligada em 24/10 às 9h18 e mantida na tomada
+  l <- c(
+    "24/10/2026 09:19:04\tINFO\t1\tGAP\tIniciando aplicação - 2º turno\tX",
+    "24/10/2026 09:20:31\tINFO\t1\tVOTA\tIniciando aplicação - 2º turno\tX",
+    "24/10/2026 23:51:08\tINFO\t1\tVOTA\tQuantidade de memória usada [362.4 MB]\tX",
+    "25/10/2026 08:01:00\tINFO\t1\tVOTA\tIdentificador do eleitor digitado pelo mesário\tX",
+    "25/10/2026 08:02:00\tINFO\t1\tVOTA\tO voto do eleitor foi computado\tX")
+  v <- votos_log(eventos_log(l), turno = 2L)
+  expect_equal(nrow(v), 1L)
+})
+
+test_that("voto em dia que não é de turno não conta", {
+  l <- c(
+    "24/10/2026 09:20:31\tINFO\t1\tVOTA\tIniciando aplicação - 2º turno\tX",
+    "24/10/2026 10:01:00\tINFO\t1\tVOTA\tIdentificador do eleitor digitado pelo mesário\tX",
+    "24/10/2026 10:02:00\tINFO\t1\tVOTA\tO voto do eleitor foi computado\tX")
+  expect_equal(nrow(votos_log(eventos_log(l), turno = 2L)), 0L)
+})
+
 test_that("tentativas de digital e manual são contadas por voto", {
   l <- c(
     "25/10/2026 09:00:00\tINFO\t1\tVOTA\tIniciando aplicação - Oficial - 2º turno\tX",

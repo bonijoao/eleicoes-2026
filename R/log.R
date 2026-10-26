@@ -7,7 +7,10 @@
 DIA_TURNO <- c("04/10/2026" = 1L, "25/10/2026" = 2L)
 
 eventos_log <- function(linhas, dias = names(DIA_TURNO)) {
-  linhas <- linhas[substr(linhas, 1, 10) %in% dias]
+  # Mantém os dias de turno e, de qualquer dia, as linhas de início de
+  # aplicação: há urnas ligadas na véspera que não reiniciam no dia da eleição.
+  no_dia <- substr(linhas, 1, 10) %in% dias
+  linhas <- linhas[no_dia | stringi::stri_detect_fixed(linhas, "\tIniciando aplicação")]
   campos <- stringi::stri_split_fixed(linhas, "\t", n = 6L, simplify = TRUE)
   e <- data.table::data.table(
     ts_local   = as.POSIXct(campos[, 1], format = "%d/%m/%Y %H:%M:%S", tz = "UTC"),
@@ -28,7 +31,8 @@ eventos_log <- function(linhas, dias = names(DIA_TURNO)) {
   turno_app[inicio & is.na(turno_app)] <- -1L
   e[, turno := turno_app]
   e[, turno := data.table::nafill(turno, "locf"), by = id_urna]
-  e[turno == -1L | turno != DIA_TURNO[dia], turno := NA_integer_]
+  e[turno == -1L | !(dia %in% dias) | turno != DIA_TURNO[dia], turno := NA_integer_]
+  e <- e[dia %in% dias]
   e[, c("dia", "ordem") := NULL]
   e[]
 }
