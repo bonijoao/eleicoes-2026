@@ -14,14 +14,6 @@ dir.create("resultados", showWarnings = FALSE)
 s <- as.data.table(arrow::read_parquet(entrada))
 tab <- dcast(s[, .N, by = .(uf, categoria)], uf ~ categoria, value.var = "N", fill = 0L)
 tot <- s[, .N, by = categoria][order(-N)][, pct := sprintf("%.2f%%", 100 * N / sum(N))]
-link <- function(x) sprintf("[%s %s/%s/%s](%s)", x$uf, x$mun, x$zona, x$secao,
-                            url_aux("3221", x$uf, x$mun, x$zona, x$secao))
-md_tab <- function(d) {
-  d <- as.data.frame(d)
-  c(paste("|", paste(names(d), collapse = " | "), "|"),
-    paste("|", paste(rep("---", ncol(d)), collapse = " | "), "|"),
-    apply(d, 1, function(r) paste("|", paste(r, collapse = " | "), "|")))
-}
 ne <- s[categoria == "nao_explicada"]
 ok_cont <- s[categoria %in% c("ok", "urna_substituida")]
 ci <- s[categoria == "coleta_incompleta"]
@@ -43,11 +35,11 @@ linhas <- c(
   "",
   "## Categorias", "", md_tab(tot), "",
   sprintf("Votos conferidos nas seções que batem: %s (log) = %s (BU).",
-          format(sum(ok_cont$votos_log), big.mark = "."),
-          format(sum(ok_cont$comparecimento_bu), big.mark = ".")),
+          fmt_int(sum(ok_cont$votos_log)),
+          fmt_int(sum(ok_cont$comparecimento_bu))),
   "", "## Por UF", "", md_tab(tab), "",
   "## Seções não explicadas", "",
-  if (nrow(ne)) md_tab(ne[, .(secao = link(.SD), votos_log, comparecimento_bu, dif, erro_log)]) else "Nenhuma.",
+  if (nrow(ne)) md_tab(ne[, .(secao = link_secao(uf, mun, zona, secao), votos_log, comparecimento_bu, dif, erro_log)]) else "Nenhuma.",
   "",
   "## Seções com coleta incompleta", "",
   "Seções com urna (não agregadas) em que falta o log, o BU ou os dois. O estado",
@@ -60,8 +52,8 @@ linhas <- c(
   "",
   if (!amostra) c(
     sprintf("Seções com urna no índice: %s. Sem as %d em estado \"Sem arquivo\" no TSE: %s.",
-            format(n_urna, big.mark = "."), n_sem_arq, format(n_urna - n_sem_arq, big.mark = ".")),
-    sprintf("O TSE divulga %s seções instaladas no 2º turno.", format(SECOES_INSTALADAS_TSE, big.mark = ".")),
+            fmt_int(n_urna), n_sem_arq, fmt_int(n_urna - n_sem_arq)),
+    sprintf("O TSE divulga %s seções instaladas no 2º turno.", fmt_int(SECOES_INSTALADAS_TSE)),
     ""),
   "## Marcas nas seções analisadas (ok e urna substituída)", "",
   md_tab(ok_cont[, .(
