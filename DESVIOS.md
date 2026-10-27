@@ -34,3 +34,50 @@ horário.
 digitado que não virou voto, por exemplo título errado) e `habilitados_sem_voto` (a urna
 habilitou o eleitor e o voto não foi computado). Só a segunda descreve um voto iniciado e
 não concluído.
+
+## 2026-10-27: como as contas em aberto serão feitas (antes de rodar as análises)
+
+A validação nacional já foi publicada (`resultados/validacao.md`). Nenhum número das
+investigações 1 e 2 foi visto. O pré-registro deixa algumas contas sem detalhe; elas
+ficam fixadas aqui antes de rodar.
+
+**Pré-condição.** São 3 seções não explicadas em 499.248 com urna (0,0006%), abaixo
+do limite de 0,1%. As análises seguem.
+
+**Cortes de horário.** "Depois das 17h00" é estritamente depois de 17:00:00; o mesmo
+vale para 17h03. "A partir das 16h00" inclui 16:00:00.
+
+**Seções sem controle pelo 1º turno.** Além de `urna_diferente_no_1t`, ficam fora das
+métricas que dependem do 1º turno as seções em que o log do 1º turno não bate com o
+BU consolidado (`diferente`, 155 seções) e as que não têm BU do 1º turno.
+
+**Investigação 1.**
+
+- Os quintis de eleitores aptos do critério de reserva são calculados dentro de cada
+  UF, sobre as seções do grupo B com controle.
+- Uma mediana `r_m` negativa é usada como está, porque o pré-registro não a corta; o
+  número de municípios com `r_m < 0` é publicado.
+- `p13_m` e `p22_m` são as proporções de cada candidato nos votos válidos (13 + 22)
+  do município, no BU do 2º turno, em todas as seções com urna.
+
+**Investigação 2.**
+
+- **Encolhimento.** `p_i = (manual_1T + κ_UF × m_mun) / (comp_1T + κ_UF)`, em que
+  `m_mun` é a taxa manual do município no 1º turno. `κ_UF` sai pelo método dos
+  momentos: `ρ = média_i[((x_i − m)² / (m(1 − m)) − 1/n_i) / (1 − 1/n_i)]`, truncado
+  em [0,000001; 0,999], e `κ = 1/ρ − 1`.
+- **Sobredispersão.** `φ` é a soma dos quadrados dos resíduos de Pearson,
+  `(manual_2T − E) / sqrt(E(1 − p))`, dividida por `n − 1`, nas seções com `E > 0`.
+  Seções com `E = 0` ficam sem escore e são listadas à parte se tiverem habilitação
+  manual no 2º turno.
+- **Rajadas.** O intervalo é medido em segundos entre votos computados consecutivos da
+  mesma urna e do mesmo turno. `δ` é o menor valor `d` tal que pelo menos 0,1% dos
+  intervalos do 1º turno no Brasil (sem o exterior) são `≤ d`. O Sinal 3 exige 9 ou
+  mais intervalos seguidos `< δ`, ou seja, 10 votos. Se `δ` for 0, nenhum intervalo
+  fica abaixo dele, e isso é publicado.
+- **Placebo no 1º turno.** A taxa esperada de cada seção é a taxa manual do 1º turno
+  no município **sem a própria seção**, sem encolhimento. O Sinal 2 usa as 16h00 de
+  04/10, e o Sinal 3 usa o mesmo `δ`.
+- **"Favorecer um candidato".** Nas seções com dois ou mais sinais, o saldo observado
+  `Σ(votos 22 − votos 13)` é comparado com o esperado pelas proporções do município,
+  `Σ válidos_i × (p22_m − p13_m)`, e a diferença é publicada.
