@@ -81,3 +81,21 @@ BU consolidado (`diferente`, 155 seções) e as que não têm BU do 1º turno.
 - **"Favorecer um candidato".** Nas seções com dois ou mais sinais, o saldo observado
   `Σ(votos 22 − votos 13)` é comparado com o esperado pelas proporções do município,
   `Σ válidos_i × (p22_m − p13_m)`, e a diferença é publicada.
+
+## 2026-10-27: o sinal 3 não discrimina no 2º turno (diagnóstico, sem mudar contas)
+
+Com `δ = 47 s`, fixado pelo 1º turno e publicado antes da leitura do 2º, o Sinal 3
+apareceu em 46.009 seções do 2º turno e em 28 no placebo do 1º. A causa é a cédula:
+a do 2º turno é bem mais curta, e o intervalo mediano entre votos cai de 101 s para
+70 s. Abaixo de `δ` ficam 0,09% dos intervalos do 1º turno e 23% dos do 2º.
+
+O que foi feito, depois de ver esses números:
+
+- As contas pré-registradas não mudam. O Sinal 3 e a contagem de "dois ou mais
+  sinais" são publicados como saíram.
+- Um diagnóstico descritivo (`scripts/07b_rajada_diagnostico.R`) publica os
+  intervalos por turno e por UF e a hora de Brasília em que cada rajada começa. Ele
+  não cria teste novo nem muda limiar.
+- O relatório diz que a comparação com o placebo não vale para o Sinal 3.
+
+Nenhuma análise de sensibilidade com outro `δ` foi feita.

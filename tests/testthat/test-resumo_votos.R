@@ -56,3 +56,11 @@ test_that("delta_rajada é o menor intervalo que acumula 0,1% dos intervalos", {
   expect_equal(delta_rajada(c("0" = 1, "5" = 999, "9" = 9000)), 5L)
   expect_equal(delta_rajada(c("0" = 20, "5" = 9980)), 0L)
 })
+
+test_that("inicio_rajadas devolve o início de cada sequência com k votos ou mais", {
+  t <- c(0, 2, 4, 6, 100, 101, 102, 200)
+  expect_equal(inicio_rajadas(t, delta = 3L, k = 4L), 0)
+  expect_equal(inicio_rajadas(t, delta = 3L, k = 3L), c(0, 100))
+  expect_equal(inicio_rajadas(t, delta = 3L, k = 5L), numeric(0))
+  expect_equal(inicio_rajadas(numeric(0), delta = 3L, k = 2L), numeric(0))
+})

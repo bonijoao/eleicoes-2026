@@ -35,6 +35,18 @@ maior_rajada <- function(ts_fim, delta) {
   as.integer(k + 1L)
 }
 
+# Início (no mesmo relógio de t) de cada sequência de k votos ou mais com
+# intervalos abaixo de delta. Usado só no diagnóstico do sinal 3.
+inicio_rajadas <- function(t, delta, k = 10L) {
+  t <- sort(as.numeric(t))
+  if (length(t) < 2L) return(numeric(0))
+  r <- rle(diff(t) < delta)
+  fim <- cumsum(r$lengths)
+  ini <- fim - r$lengths + 1L
+  sel <- r$values & r$lengths + 1L >= k
+  t[ini[sel]]
+}
+
 resumir_votos <- function(v, delta) {
   v <- data.table::as.data.table(v)
   base <- inicio_dia_turno(v$turno)
