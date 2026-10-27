@@ -24,6 +24,12 @@ md_tab <- function(d) {
 }
 ne <- s[categoria == "nao_explicada"]
 ok_cont <- s[categoria %in% c("ok", "urna_substituida")]
+ci <- s[categoria == "coleta_incompleta"]
+# Total de seções instaladas no 2º turno segundo o TSE; a diferença para as
+# seções com urna do índice são as que o TSE marca como "Sem arquivo".
+SECOES_INSTALADAS_TSE <- 499207L
+n_urna    <- s[categoria != "agregada", .N]
+n_sem_arq <- s[categoria != "agregada" & hash_st %in% "Sem arquivo", .N]
 
 linhas <- c(
   sprintf("# Validação log × boletim de urna%s", if (amostra) " (amostra de validação)" else ""),
@@ -43,6 +49,20 @@ linhas <- c(
   "## Seções não explicadas", "",
   if (nrow(ne)) md_tab(ne[, .(secao = link(.SD), votos_log, comparecimento_bu, dif, erro_log)]) else "Nenhuma.",
   "",
+  "## Seções com coleta incompleta", "",
+  "Seções com urna (não agregadas) em que falta o log, o BU ou os dois. O estado",
+  "vem do aux.json publicado pelo TSE para a seção.", "",
+  if (nrow(ci)) md_tab(ci[, .N, by = .(local = fifelse(uf == "zz", "exterior", "Brasil"),
+                                      estado_tse = hash_st,
+                                      log = fifelse(is.na(votos_log), "não", "sim"),
+                                      bu = fifelse(is.na(comparecimento_bu), "não", "sim"))
+                          ][order(local, estado_tse, log, bu)]) else "Nenhuma.",
+  "",
+  if (!amostra) c(
+    sprintf("Seções com urna no índice: %s. Sem as %d em estado \"Sem arquivo\" no TSE: %s.",
+            format(n_urna, big.mark = "."), n_sem_arq, format(n_urna - n_sem_arq, big.mark = ".")),
+    sprintf("O TSE divulga %s seções instaladas no 2º turno.", format(SECOES_INSTALADAS_TSE, big.mark = ".")),
+    ""),
   "## Marcas nas seções analisadas (ok e urna substituída)", "",
   md_tab(ok_cont[, .(
     `hash não totalizado` = sum(!is.na(hash_st) & hash_st != "Totalizado"),
