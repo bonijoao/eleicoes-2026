@@ -1,0 +1,88 @@
+{
+  "margem": 4430191,
+  "decisao": "2026-10-25 17:03:00",
+  "principal": {
+    "n": {
+      "secoes": 497804,
+      "A": 132502,
+      "B": 365290,
+      "sem_encerramento": 12,
+      "B_com_controle": 364077
+    },
+    "metrica1": {
+      "turno2": {
+        "votos": 127833399,
+        "apos_1700": 34038,
+        "apos_1703": 7906
+      },
+      "turno1": {
+        "secoes": 496221,
+        "apos_1700": 3707262,
+        "apos_1703": 3398534
+      }
+    },
+    "metrica2": {
+      "media": -0.0227767037392662,
+      "p05": -0.127659574468085,
+      "p25": -0.0212765957446809,
+      "p50": 0,
+      "p75": 0,
+      "p95": 0
+    },
+    "fonte_r": {
+      "municipio": 130208,
+      "uf_quintil": 2294,
+      "sem_taxa": 0
+    },
+    "n_mun_r_negativo": 2343,
+    "n_mun_com_r": 5228,
+    "teto": {
+      "bruto": -381236.056417783,
+      "liquido": 112239.880081342,
+      "pior_caso": 19823.8066440588,
+      "sem_taxa": 0
+    }
+  },
+  "a_parte": {
+    "n": {
+      "secoes": 84,
+      "A": 17,
+      "B": 67,
+      "sem_encerramento": 0,
+      "B_com_controle": 63
+    },
+    "metrica1": {
+      "turno2": {
+        "votos": 19140,
+        "apos_1700": 12,
+        "apos_1703": 10
+      },
+      "turno1": {
+        "secoes": 77,
+        "apos_1700": 1363,
+        "apos_1703": 1307
+      }
+    },
+    "metrica2": {
+      "media": -0.0543104341229869,
+      "p05": -0.226964333601502,
+      "p25": -0.1002574002574,
+      "p50": -0.00377358490566038,
+      "p75": 0,
+      "p95": 0
+    },
+    "fonte_r": {
+      "municipio": 0,
+      "uf_quintil": 13,
+      "sem_taxa": 4
+    },
+    "n_mun_r_negativo": 1,
+    "n_mun_com_r": 1,
+    "teto": {
+      "bruto": -168.814665440066,
+      "liquido": 65.3918500513602,
+      "pior_caso": -141.873051847765,
+      "sem_taxa": 4
+    }
+  }
+}
